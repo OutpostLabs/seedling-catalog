@@ -2,17 +2,11 @@
 
 **Latest catalog schema version**: v5
 
-**Supported catalog schema versions**: v1, v2, v3, v4, v5
-
 ## Automatic Catalog Fetching
 
-Catalogs for AWS, GCP, and Lambda are automatically fetched & refreshed from the cloud provider, implemented as GitHub Actions. Other clouds can implement [catalog fetchers](https://github.com/outpostlabs/glider/tree/main/seed/clouds/service_catalog/data_fetchers) and a corresponding [Action](./.github/workflows/) to add auto-refresh.
+Catalogs for AWS, GCP, FluidStack, and Lambda are automatically fetched & refreshed from the cloud provider, implemented as GitHub Actions. Other clouds can implement [catalog fetchers](https://github.com/outpostlabs/glider/tree/main/seed/clouds/service_catalog/data_fetchers) and a corresponding [Action](./.github/workflows/) to add auto-refresh.
 
 Catalogs are updated **every 7 hours**.
-
-
-
-
 
 ## Schema V5
 
@@ -44,7 +38,7 @@ To supply your own custom pricing or custom regions/zones, you can update vms.cs
 | `Region` | string | The region of the image (if the image is available across regions, this field should be empty). |
 | `OS` | string | The OS of the image, e.g. ubuntu. |
 | `OSVersion` | string | The OS version of the image, e.g. 2004. |
-| `ImageId` | string | The ID of the image that is used to launch the instance in the cloud. |
+| `ImageId` | string | The ID of the image that is used to cast the instance in the cloud. |
 | `CreationDate` | string | The creation date of the image (mainly for tracking purpose). |
 
 
