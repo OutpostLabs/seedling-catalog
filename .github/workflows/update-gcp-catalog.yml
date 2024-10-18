@@ -1,76 +1,76 @@
-name: "update-gcp-catalog"
-on:
-  schedule:
-    - cron:  '00 */7 * * *'    # Every 7 hours (GCP guarantees the price changes up to once a month, but different VMs may change at different times)
-    # The frequency can be tuned for the trade-off between
-    # freshness of the price and github action cost/user downloading
-    # overhead of the update.
-    # _PULL_FREQUENCY_HOURS in `gcp_catalog.py` need to be updated
-    # accordingly, if this is changed.
-  workflow_dispatch:
+# name: "update-gcp-catalog"
+# on:
+#   schedule:
+#     - cron:  '00 */7 * * *'    # Every 7 hours (GCP guarantees the price changes up to once a month, but different VMs may change at different times)
+#     # The frequency can be tuned for the trade-off between
+#     # freshness of the price and github action cost/user downloading
+#     # overhead of the update.
+#     # _PULL_FREQUENCY_HOURS in `gcp_catalog.py` need to be updated
+#     # accordingly, if this is changed.
+#   workflow_dispatch:
 
-jobs:
-  update_gcp_catalog:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone Seedling repo
-        uses: actions/checkout@v4
-        with:
-          repository: outpostlabs/glider
-          path: seed
-      - name: Clone Catalog repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          path: catalogs
-          token: ${{ secrets.GH_ACTION_PAT }}
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          cache: 'pip' # caching pip dependencies
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          cd seed
-          pip install ".[gcp]" &
-          cd ~
-          curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-436.0.0-linux-x86_64.tar.gz
-          tar -xf google-cloud-cli-436.0.0-linux-x86_64.tar.gz
-          ./google-cloud-sdk/install.sh -q
-          wait
+# jobs:
+#   update_gcp_catalog:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Clone Seedling repo
+#         uses: actions/checkout@v4
+#         with:
+#           repository: outpostlabs/glider
+#           path: seed
+#       - name: Clone Catalog repo
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           path: catalogs
+#           token: ${{ secrets.GH_ACTION_PAT }}
+#       - name: Set up Python 3.10
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.10'
+#           cache: 'pip' # caching pip dependencies
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           cd seed
+#           pip install ".[gcp]" &
+#           cd ~
+#           curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-436.0.0-linux-x86_64.tar.gz
+#           tar -xf google-cloud-cli-436.0.0-linux-x86_64.tar.gz
+#           ./google-cloud-sdk/install.sh -q
+#           wait
 
-      - name: Run fetch_gcp
-        run: |
-          echo "> Sourcing gcloud path ..."
-          source ~/google-cloud-sdk/path.bash.inc
-          echo "> Writing service account key to file ..."
-          echo "$GCP_SERVICE_ACCOUNT_KEY" > $HOME/service_account_key.json
-          echo "> Exporting service account key ..."
-          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/service_account_key.json
-          echo "> Activating service account ..."
-          gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS > /dev/null
-          echo "> Configuring project ..."
-          gcloud config set project $GCP_PROJECT_ID > /dev/null
-          echo "> Fetching catalog schema version ..."
-          version=$(python -c 'import seed; print(seed.clouds.service_catalog.constants.CATALOG_SCHEMA_VERSION)')
-          echo "> Creating catalog directory ..."
-          mkdir -p catalogs/catalogs/$version
-          cd catalogs/catalogs/$version
-          echo "> Fetching GCP catalog ..."
-          python -u -m seed.clouds.service_catalog.data_fetchers.fetch_gcp --all-regions --single-threaded
-        env:
-          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+#       - name: Run fetch_gcp
+#         run: |
+#           echo "> Sourcing gcloud path ..."
+#           source ~/google-cloud-sdk/path.bash.inc
+#           echo "> Writing service account key to file ..."
+#           echo "$GCP_SERVICE_ACCOUNT_KEY" > $HOME/service_account_key.json
+#           echo "> Exporting service account key ..."
+#           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/service_account_key.json
+#           echo "> Activating service account ..."
+#           gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS > /dev/null
+#           echo "> Configuring project ..."
+#           gcloud config set project $GCP_PROJECT_ID > /dev/null
+#           echo "> Fetching catalog schema version ..."
+#           version=$(python -c 'import seed; print(seed.clouds.service_catalog.constants.CATALOG_SCHEMA_VERSION)')
+#           echo "> Creating catalog directory ..."
+#           mkdir -p catalogs/catalogs/$version
+#           cd catalogs/catalogs/$version
+#           echo "> Fetching GCP catalog ..."
+#           python -u -m seed.clouds.service_catalog.data_fetchers.fetch_gcp --all-regions --single-threaded
+#         env:
+#           GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+#           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Commit catalog
-        run: |
-          version=$(python -c 'import seed; print(seed.clouds.service_catalog.constants.CATALOG_SCHEMA_VERSION)')
-          cd catalogs
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add .
-          git commit -m"[Bot] Update GCP catalog $version (scheduled at $(date))" || { echo "No changes to commit" && exit 0; }
-          git fetch origin
-          git rebase origin/main
-          git push
+#       - name: Commit catalog
+#         run: |
+#           version=$(python -c 'import seed; print(seed.clouds.service_catalog.constants.CATALOG_SCHEMA_VERSION)')
+#           cd catalogs
+#           git config --global user.name 'github-actions[bot]'
+#           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+#           git add .
+#           git commit -m"[Bot] Update GCP catalog $version (scheduled at $(date))" || { echo "No changes to commit" && exit 0; }
+#           git fetch origin
+#           git rebase origin/main
+#           git push
